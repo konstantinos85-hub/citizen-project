@@ -21,4 +21,5 @@ jobs:
         cache: maven
 
     - name: Build and Test with Maven
-      run: mvn -B clean verify
+      # Προσθέτουμε την παράμετρο που απενεργοποιεί τους CommandLineRunners
+      run: mvn -B clean verify -Dspring.main.command-line-runner.enabled=false
