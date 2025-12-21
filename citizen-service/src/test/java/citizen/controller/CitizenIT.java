@@ -17,7 +17,14 @@ import static org.hamcrest.Matchers.*;
  * Integration Test (IT) για την RESTful υπηρεσία Citizen.
  * Χρησιμοποιεί το Rest-Assured για την επαλήθευση των HTTP endpoints.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+		webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+		properties = { 
+				"spring.main.web-application-type=servlet",
+				"spring.main.command-line-runner.enabled=false"
+		}
+	)
+
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class CitizenIT {

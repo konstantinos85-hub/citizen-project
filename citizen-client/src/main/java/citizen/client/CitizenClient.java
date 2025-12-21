@@ -22,9 +22,14 @@ public class CitizenClient implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        boolean running = true;
-        System.out.println("Ο Client ξεκίνησε επιτυχώς.");
+        // ΕΛΕΓΧΟΣ: Αν στο classpath υπάρχει η κλάση του JUnit, σταμάτα αμέσως!
+        String isTest = System.getProperty("sun.java.command");
+        if (isTest != null && (isTest.contains("junit") || isTest.contains("CitizenIT"))) {
+            return; 
+        }
 
+        boolean running = true;
+        
         while (running) {
             try {
                 System.out.println("\n--- ΜΕΝΟΥ ΔΙΑΧΕΙΡΙΣΗΣ ΠΟΛΙΤΩΝ ---");
