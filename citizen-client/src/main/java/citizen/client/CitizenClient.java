@@ -1,14 +1,15 @@
 package citizen.client;
+
 import citizen.model.Citizen;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import java.util.Scanner;
 import org.springframework.context.annotation.Profile;
+import java.util.Scanner;
 
 @Component
-@Profile("!test")
+@Profile("!test") // Ασφάλεια 1: Spring Profile (Απενεργοποίηση στα tests)
 public class CitizenClient implements CommandLineRunner {
 
     private final String BASE_URL = "http://localhost:8089/api/citizens";
@@ -16,28 +17,33 @@ public class CitizenClient implements CommandLineRunner {
     private final Scanner scanner = new Scanner(System.in);
 
     public CitizenClient() {
-        // Ρύθμιση RestTemplate για υποστήριξη PATCH requests
+        // Υποστήριξη PATCH requests μέσω Apache HttpClient 5
         this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
     }
 
     @Override
     public void run(String... args) {
-        // ΕΛΕΓΧΟΣ: Αν στο classpath υπάρχει η κλάση του JUnit, σταμάτα αμέσως!
-        String isTest = System.getProperty("sun.java.command");
-        if (isTest != null && (isTest.contains("junit") || isTest.contains("CitizenIT"))) {
+        // Ασφάλεια 2: Έλεγχος αν τρέχει στο περιβάλλον του GitHub Actions
+        if (System.getenv("GITHUB_ACTIONS") != null) {
+            return;
+        }
+
+        // Ασφάλεια 3: Έλεγχος Runtime αν η εντολή εκτέλεσης περιέχει JUnit ή το Integration Test
+        String isTest = System.getProperty("sun.java.command", "");
+        if (isTest.contains("junit") || isTest.contains("CitizenIT")) {
             return; 
         }
 
         boolean running = true;
+        System.out.println("Ο Client ξεκίνησε επιτυχώς.");
         
         while (running) {
             try {
-                System.out.println("\n--- ΜΕΝΟΥ ΔΙΑΧΕΙΡΙΣΗΣ ΠΟΛΙΤΩΝ ---");
+                System.out.println("\n--- ΜΕΝΟΥ ΔΙΑΧΕΙΡΙΣΗΣ ΠΟΛΙΤΩΝ (2025) ---");
                 System.out.println("1. Λίστα | 2. Εύρεση | 3. Εισαγωγή | 4. Ενημέρωση | 5. Διαγραφή");
-                System.out.println("Οποιαδήποτε άλλη τιμή για ΕΞΟΔΟ");
+                System.out.println("Οποιαδήποτε άλλη τιμή για ΕΞΟΔΟΣ");
                 System.out.print("Επιλογή: ");
 
-                // Χρησιμοποιούμε μια προσωρινή μεταβλητή για την ανάγνωση
                 if (!scanner.hasNextLine()) {
                     break; 
                 }
@@ -51,35 +57,36 @@ public class CitizenClient implements CommandLineRunner {
                     case "4" -> update();
                     case "5" -> delete();
                     default -> {
-                        System.out.println("Τερματισμός εφαρμογής κατόπιν επιλογής χρήστη...");
+                        System.out.println("Τερματισμός εφαρμογής...");
                         running = false;
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Παρουσιάστηκε σφάλμα: " + e.getMessage());
-                System.out.println("Προσπάθεια επιστροφής στο μενού...");
-                // Το loop συνεχίζει, δεν αφήνουμε το exception να σκοτώσει την εφαρμογή
+                System.err.println("Σφάλμα: " + e.getMessage());
+                System.out.println("Επιστροφή στο μενού...");
             }
         }
-        
-        // Μόνο εδώ στο τέλος κλείνει η εφαρμογή
         System.out.println("Αντίο!");
     }
-
-    
 
     private void listAll() {
         Citizen[] citizens = restTemplate.getForObject(BASE_URL + "/search", Citizen[].class);
         if (citizens != null) {
-            for (Citizen c : citizens) System.out.println(c.getAt() + ": " + c.getFirstName() + " " + c.getLastName());
+            for (Citizen c : citizens) {
+                System.out.println(c.getAt() + ": " + c.getFirstName() + " " + c.getLastName());
+            }
         }
     }
 
     private void getByAt() {
         System.out.print("Δώστε ΑΤ: ");
         String at = scanner.nextLine();
-        Citizen c = restTemplate.getForObject(BASE_URL + "/" + at, Citizen.class);
-        System.out.println("Στοιχεία: " + c.getFirstName() + " " + c.getLastName() + ", ΑΦΜ: " + c.getAfm());
+        try {
+            Citizen c = restTemplate.getForObject(BASE_URL + "/" + at, Citizen.class);
+            System.out.println("Στοιχεία: " + c.getFirstName() + " " + c.getLastName() + ", ΑΦΜ: " + c.getAfm());
+        } catch (Exception e) {
+            System.out.println("Ο πολίτης δεν βρέθηκε.");
+        }
     }
 
     private void create() {
@@ -88,7 +95,7 @@ public class CitizenClient implements CommandLineRunner {
         System.out.print("Όνομα: "); c.setFirstName(scanner.nextLine());
         System.out.print("Επίθετο: "); c.setLastName(scanner.nextLine());
         System.out.print("Φύλο: "); c.setGender(scanner.nextLine());
-        System.out.print("Ημ/νία Γέννησης: "); c.setBirthDate(scanner.nextLine());
+        System.out.print("Ημ/νία Γέννησης (DD-MM-YYYY): "); c.setBirthDate(scanner.nextLine());
         System.out.print("ΑΦΜ: "); c.setAfm(scanner.nextLine());
         System.out.print("Διεύθυνση: "); c.setAddress(scanner.nextLine());
 
