@@ -16,6 +16,7 @@ import static org.hamcrest.Matchers.*;
  * Χρησιμοποιεί το Rest-Assured για την επαλήθευση των HTTP endpoints.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@org.springframework.test.annotation.DirtiesContext
 public class CitizenIT {
 
     @LocalServerPort
