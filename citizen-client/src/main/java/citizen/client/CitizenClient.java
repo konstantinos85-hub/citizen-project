@@ -5,9 +5,10 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import java.util.Scanner;
+import org.springframework.context.annotation.Profile;
 
 @Component
-@org.springframework.context.annotation.Profile("!test")
+@Profile("!test")
 public class CitizenClient implements CommandLineRunner {
 
     private final String BASE_URL = "http://localhost:8089/api/citizens";
