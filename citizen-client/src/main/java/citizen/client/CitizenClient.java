@@ -22,19 +22,22 @@ public class CitizenClient implements CommandLineRunner {
     @Override
     public void run(String... args) {
         boolean running = true;
+        System.out.println("Ο Client ξεκίνησε επιτυχώς.");
+
         while (running) {
-            System.out.println("\n--- ΜΕΝΟΥ ΔΙΑΧΕΙΡΙΣΗΣ ΠΟΛΙΤΩΝ (Client) ---");
-            System.out.println("1. Λίστα Πολιτών");
-            System.out.println("2. Εύρεση με ΑΤ");
-            System.out.println("3. Εισαγωγή (POST)");
-            System.out.println("4. Ενημέρωση (PATCH)");
-            System.out.println("5. Διαγραφή (DELETE)");
-            System.out.println("Οποιαδήποτε άλλη επιλογή: ΕΞΟΔΟΣ");
-            System.out.print("Επιλογή: ");
-
-            String choice = scanner.nextLine();
-
             try {
+                System.out.println("\n--- ΜΕΝΟΥ ΔΙΑΧΕΙΡΙΣΗΣ ΠΟΛΙΤΩΝ ---");
+                System.out.println("1. Λίστα | 2. Εύρεση | 3. Εισαγωγή | 4. Ενημέρωση | 5. Διαγραφή");
+                System.out.println("Οποιαδήποτε άλλη τιμή για ΕΞΟΔΟ");
+                System.out.print("Επιλογή: ");
+
+                // Χρησιμοποιούμε μια προσωρινή μεταβλητή για την ανάγνωση
+                if (!scanner.hasNextLine()) {
+                    break; 
+                }
+                
+                String choice = scanner.nextLine().trim();
+
                 switch (choice) {
                     case "1" -> listAll();
                     case "2" -> getByAt();
@@ -42,16 +45,22 @@ public class CitizenClient implements CommandLineRunner {
                     case "4" -> update();
                     case "5" -> delete();
                     default -> {
-                        System.out.println("Τερματισμός...");
+                        System.out.println("Τερματισμός εφαρμογής κατόπιν επιλογής χρήστη...");
                         running = false;
-                        System.exit(0);
                     }
                 }
             } catch (Exception e) {
-                System.out.println("Σφάλμα: " + e.getMessage());
+                System.err.println("Παρουσιάστηκε σφάλμα: " + e.getMessage());
+                System.out.println("Προσπάθεια επιστροφής στο μενού...");
+                // Το loop συνεχίζει, δεν αφήνουμε το exception να σκοτώσει την εφαρμογή
             }
         }
+        
+        // Μόνο εδώ στο τέλος κλείνει η εφαρμογή
+        System.out.println("Αντίο!");
     }
+
+    
 
     private void listAll() {
         Citizen[] citizens = restTemplate.getForObject(BASE_URL + "/search", Citizen[].class);
