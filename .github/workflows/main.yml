@@ -31,7 +31,10 @@ jobs:
       # Χρησιμοποιούμε τη φάση verify για να καλύψουμε όλα τα είδη δοκιμών.
       # Επιβάλλουμε την απενεργοποίηση του client για να μην "κολλήσει" ο αγωγός.
       - name: Run Unit and API Tests
-        run: mvn verify -Dcitizen.client.enabled=false -Dspring.main.web-application-type=none
+        # Επιβάλλουμε το profile test και την απενεργοποίηση του client μέσω command line
+        run: mvn verify -Dspring.profiles.active=test -Dcitizen.client.enabled=false -Dspring.main.web-application-type=none
+
+
 
       # 5. Μεταφόρτωση Αρχείων Αναφοράς (Test Reports) για οπτικοποίηση
       - name: Upload Test Reports Artifacts
