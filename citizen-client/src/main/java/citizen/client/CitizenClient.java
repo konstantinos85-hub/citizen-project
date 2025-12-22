@@ -1,4 +1,6 @@
-package citizen.client;
+package citizen.client; 
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 import citizen.model.Citizen;
 import org.springframework.boot.CommandLineRunner;
@@ -10,6 +12,7 @@ import java.util.Scanner;
 
 @Component
 @Profile("!test") // Ασφάλεια 1: Δεν φορτώνεται ποτέ όταν τρέχουν τα tests
+@ConditionalOnProperty(name = "citizen.client.enabled", havingValue = "true", matchIfMissing = true)
 public class CitizenClient implements CommandLineRunner {
 
     private final String BASE_URL = "http://localhost:8089/api/citizens";
