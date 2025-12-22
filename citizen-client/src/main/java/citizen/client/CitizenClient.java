@@ -25,13 +25,14 @@ public class CitizenClient implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-    // ΑΥΤΟ ΘΑ ΣΤΑΜΑΤΗΣΕΙ ΤΟ ΠΑΓΩΜΑ ΟΡΙΣΤΙΚΑ
+    
     if (System.getenv("GITHUB_ACTIONS") != null || System.console() == null) {
-        System.out.println("Non-interactive environment detected. Skipping menu...");
+        System.out.println("CI Environment detected. Skipping interactive menu...");
         return; 
     }
     startInteractiveMenu();
     }
+
 
 
 
