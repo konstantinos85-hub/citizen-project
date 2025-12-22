@@ -6,14 +6,15 @@ import static org.hamcrest.Matchers.equalTo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.server.LocalServerPort; // Απαραίτητο για το 2025
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
 import citizen.model.Citizen;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 
-// Ορισμός RANDOM_PORT για να επιλυθεί η local.server.port
+// Χρησιμοποιούμε DEFINED_PORT αν θέλουμε οπωσδήποτε την 8089, 
+// αλλά το RANDOM_PORT είναι το πιο ασφαλές για το GitHub Actions.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public class CitizenIT {
@@ -23,6 +24,7 @@ public class CitizenIT {
 
     @BeforeEach
     public void setUp() {
+        // Το RestAssured θα χρησιμοποιήσει τη θύρα που σήκωσε το Spring (π.χ. 8089 ή τυχαία)
         RestAssured.port = port;
         RestAssured.basePath = "/api/citizens";
     }
@@ -38,7 +40,7 @@ public class CitizenIT {
         citizen.setBirthDate("01-01-1990");
         citizen.setAddress("Athens 123");
 
-        // POST Request - Δημιουργία
+        // 1. POST Request
         given()
             .contentType(ContentType.JSON)
             .body(citizen)
@@ -47,7 +49,7 @@ public class CitizenIT {
         .then()
             .statusCode(200);
 
-        // GET Request - Επαλήθευση
+        // 2. GET Request
         given()
             .pathParam("at", "AZ123456")
         .when()
