@@ -3,19 +3,19 @@ name: Citizen Project CI/CD Pipeline
 on:
   push:
     branches:
-      - develop  # Ο αγωγός εκτελείται μόνο για commits στο κλαδί develop
+      - develop  # Εκτέλεση μόνο για commits στο κλαδί develop
 
 jobs:
   build-and-test:
-    name: Build, Unit & API Testing
+    name: Build and Automated Testing
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Check-out τον κώδικα από το αποθετήριο
+      # 1. Checkout τον πηγαίο κώδικα
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Εγκατάσταση JDK 17
+      # 2. Εγκατάσταση Java 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -23,20 +23,21 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. Μεταγλώττιση και Εκτέλεση Δοκιμών (Unit & API/Integration)
-      # Χρησιμοποιούμε τη φάση verify για να εκτελεστούν όλα τα tests.
-      # Επιβάλλουμε το profile 'test' και απενεργοποιούμε το interactive μενού.
+      # 3. Εκτέλεση Δοκιμών (Unit & API)
+      # Χρησιμοποιούμε το mvn verify για να εκτελεστούν Surefire (Unit) και Failsafe (API) tests.
+      # Επιβάλλουμε το profile 'test' και απενεργοποιούμε το interactive mode.
       - name: Run Unit and API Tests
         run: |
           mvn clean verify \
           -Dspring.profiles.active=test \
           -Dcitizen.client.enabled=false \
+          -Dspring.main.web-application-type=none \
           -DskipTests=false
 
-      # 4. Μεταφόρτωση Αρχείων Αναφοράς (Test Reports) για οπτικοποίηση
+      # 4. Μεταφόρτωση Αρχείων Αναφοράς (Artifacts) για οπτικοποίηση εκτέλεσης
       - name: Upload Test Reports Artifacts
         uses: actions/upload-artifact@v4
-        if: always() # Διασφαλίζει τη μεταφόρτωση ακόμα και αν αποτύχουν τα tests
+        if: always() # Διασφαλίζει τη μεταφόρτωση ακόμα και αν αποτύχουν οι δοκιμές
         with:
           name: test-execution-reports
           path: |
@@ -44,13 +45,12 @@ jobs:
             **/target/failsafe-reports/
 
   release:
-    name: Early Software Release
-    needs: build-and-test # Εκτελείται μόνο αν ολοκληρωθούν επιτυχώς οι δοκιμές
+    name: Create Early Release
+    needs: build-and-test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop'
     permissions:
-      contents: write # Απαραίτητο για τη δημιουργία Release στο GitHub το 2025
-
+      contents: write # Απαραίτητο για τη δημιουργία Release το 2025
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
       - name: Build Package
         run: mvn package -DskipTests
 
-      # 5. Μεταφόρτωση του εκτελέσιμου (.jar) στο GitHub Releases (Προαιρετικό)
+      # 5. Μεταφόρτωση του εκτελέσιμου (.jar) στο GitHub Releases
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
