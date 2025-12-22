@@ -24,8 +24,8 @@ public class CitizenClient implements CommandLineRunner {
     @Override
     public void run(String... args) {
         // Ασφάλεια 2: Έλεγχος αν τρέχει στο περιβάλλον του GitHub Actions
-        if (System.getenv("GITHUB_ACTIONS") != null) {
-            return;
+    	if (System.getenv("GITHUB_ACTIONS") != null || System.getProperty("sun.java.command", "").contains("CitizenIT")) {
+            return; 
         }
 
         // Ασφάλεια 3: Έλεγχος Runtime αν η εντολή εκτέλεσης περιέχει JUnit ή το Integration Test
