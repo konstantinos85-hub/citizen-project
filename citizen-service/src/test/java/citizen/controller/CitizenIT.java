@@ -13,18 +13,17 @@ import citizen.model.Citizen;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 
-// Χρησιμοποιούμε DEFINED_PORT αν θέλουμε οπωσδήποτε την 8089, 
-// αλλά το RANDOM_PORT είναι το πιο ασφαλές για το GitHub Actions.
+// Ορισμός RANDOM_PORT για να επιλυθεί η θύρα του server
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 public class CitizenIT {
 
+    // Η σωστή annotation για το 2025 που λύνει το Injection Error
     @LocalServerPort
     private int port;
 
     @BeforeEach
     public void setUp() {
-        // Το RestAssured θα χρησιμοποιήσει τη θύρα που σήκωσε το Spring (π.χ. 8089 ή τυχαία)
         RestAssured.port = port;
         RestAssured.basePath = "/api/citizens";
     }
@@ -40,7 +39,7 @@ public class CitizenIT {
         citizen.setBirthDate("01-01-1990");
         citizen.setAddress("Athens 123");
 
-        // 1. POST Request
+        // 1. POST Request - Δημιουργία
         given()
             .contentType(ContentType.JSON)
             .body(citizen)
@@ -49,7 +48,7 @@ public class CitizenIT {
         .then()
             .statusCode(200);
 
-        // 2. GET Request
+        // 2. GET Request - Επαλήθευση
         given()
             .pathParam("at", "AZ123456")
         .when()
@@ -59,3 +58,4 @@ public class CitizenIT {
             .body("firstName", equalTo("Konstantinos"));
     }
 }
+
