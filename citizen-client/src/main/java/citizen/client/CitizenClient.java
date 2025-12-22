@@ -9,8 +9,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import java.util.Scanner;
 
+@Profile("!test")
 @Component
-@Profile("!test") // Ασφάλεια 1: Δεν φορτώνεται η κλάση αν το ενεργό profile είναι "test"
+ // Ασφάλεια 1: Δεν φορτώνεται η κλάση αν το ενεργό profile είναι "test"
 @ConditionalOnProperty(name = "citizen.client.enabled", havingValue = "true", matchIfMissing = true)
 public class CitizenClient implements CommandLineRunner {
 
