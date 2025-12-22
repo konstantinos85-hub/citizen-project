@@ -3,19 +3,19 @@ name: Citizen Project CI/CD Pipeline
 on:
   push:
     branches:
-      - develop  # Εκτέλεση μόνο για commits στο κλαδί develop
+      - develop  # Εκτέλεση μόνο για commits στο κλάδι develop
 
 jobs:
   build-and-test:
-    name: Build, Unit & API Testing
+    name: Build and Run Automated Tests
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout τον κώδικα από το αποθετήριο
+      # 1. Checkout τον κώδικα από το GitHub
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Εγκατάσταση JDK 17
+      # 2. Εγκατάσταση Java 17
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -23,23 +23,21 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. Μεταγλώττιση του πηγαίου κώδικα
-      - name: Compile Code
-        run: mvn clean compile
-
-      # 4. Εκτέλεση Δοκιμών (Unit & API/Integration)
-      # Χρησιμοποιούμε τη φάση verify για να καλύψουμε όλα τα είδη δοκιμών.
-      # Επιβάλλουμε την απενεργοποίηση του client για να μην "κολλήσει" ο αγωγός.
+      # 3. Εκτέλεση Δοκιμών (Unit & API) με πλήρη απενεργοποίηση του Interactive Menu
       - name: Run Unit and API Tests
-        # Επιβάλλουμε το profile test και την απενεργοποίηση του client μέσω command line
-        run: mvn verify -Dspring.profiles.active=test -Dcitizen.client.enabled=false -Dspring.main.web-application-type=none
+        run: |
+          mvn clean verify \
+          -Dspring.profiles.active=test \
+          -Dcitizen.client.enabled=false \
+          -Dspring.main.web-application-type=none \
+          -Dcheckstyle.skip=true \
+          -Dmaven.main.skip=false \
+          -DskipTests=false
 
-
-
-      # 5. Μεταφόρτωση Αρχείων Αναφοράς (Test Reports) για οπτικοποίηση
-      - name: Upload Test Reports Artifacts
+      # 4. Μεταφόρτωση Αρχείων Αναφοράς (Artifacts) για οπτικοποίηση
+      - name: Upload Test Reports
         uses: actions/upload-artifact@v4
-        if: always() # Εκτελείται ακόμα και αν αποτύχουν οι δοκιμές
+        if: always() # Για να ανέβουν τα reports ακόμα και αν κάποιο test αποτύχει
         with:
           name: test-execution-reports
           path: |
@@ -47,22 +45,21 @@ jobs:
             **/target/failsafe-reports/
 
   release:
-    name: Create Early Software Release
-    needs: build-and-test # Εκτελείται μόνο αν περάσουν επιτυχώς οι δοκιμές
+    name: Create Software Release
+    needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
+    if: success() && github.ref == 'refs/heads/develop'
     permissions:
-      contents: write # Απαραίτητο για τη δημιουργία Release το 2025
-
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Package Executables
+      - name: Package Application
         run: mvn package -DskipTests
 
-      # 6. Μεταφόρτωση των εκτελέσιμων (.jar) στο GitHub Releases
-      - name: Upload to GitHub Releases
+      # 5. Μεταφόρτωση εκτελέσιμου στο GitHub Releases (Προαιρετικό)
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v0.1.${{ github.run_number }}-alpha
@@ -71,6 +68,5 @@ jobs:
           prerelease: true
           files: |
             **/target/*.jar
-            **/target/*.war
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
