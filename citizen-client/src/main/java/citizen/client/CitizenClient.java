@@ -10,8 +10,9 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.context.annotation.Profile;
 import java.util.Scanner;
 
+@Profile("!test")
 @Component
-@Profile("!test") // Ασφάλεια 1: Δεν φορτώνεται ποτέ όταν τρέχουν τα tests
+ // Ασφάλεια 1: Δεν φορτώνεται ποτέ όταν τρέχουν τα tests
 @ConditionalOnProperty(name = "citizen.client.enabled", havingValue = "true", matchIfMissing = true)
 public class CitizenClient implements CommandLineRunner {
 
