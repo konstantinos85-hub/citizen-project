@@ -24,20 +24,18 @@ public class CitizenClient implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) {
-        // Ασφάλεια 2: Αν τρέχουμε στο GitHub Actions, σταμάτα αμέσως την εκτέλεση
-        if (System.getenv("GITHUB_ACTIONS") != null) {
-            System.out.println("GitHub Actions detected. Skipping interactive menu...");
-            return; 
-        }
-
-        // Ασφάλεια 3: Έλεγχος αν υπάρχει πραγματικό τερματικό/πληκτρολόγιο
-        if (System.console() == null) {
-            return; 
-        }
-
-        startInteractiveMenu();
+public void run(String... args) {
+    
+    String command = System.getProperty("sun.java.command", "").toLowerCase();
+    if (System.getenv("GITHUB_ACTIONS") != null || 
+        command.contains("junit") || 
+        command.contains("surefire") || 
+        command.contains("failsafe")) {
+        return; 
     }
+    
+    startInteractiveMenu();
+}
 
     private void startInteractiveMenu() {
         Scanner scanner = new Scanner(System.in);
