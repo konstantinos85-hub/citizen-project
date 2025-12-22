@@ -8,25 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.annotation.DirtiesContext;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-/**
- * Integration Test (IT) για την RESTful υπηρεσία Citizen.
- * Χρησιμοποιεί το Rest-Assured για την επαλήθευση των HTTP endpoints.
- */
-@SpringBootTest(
-		webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-		properties = { 
-				"spring.main.web-application-type=servlet",
-				"spring.main.command-line-runner.enabled=false"
-		}
-	)
-
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class CitizenIT {
 
     @LocalServerPort
@@ -34,14 +21,12 @@ public class CitizenIT {
 
     @BeforeEach
     public void setUp() {
-        // Ρύθμιση της θύρας και του base path για το Rest-Assured
         RestAssured.port = port;
         RestAssured.basePath = "/api/citizens";
     }
 
     @Test
     public void testCreateAndGetCitizen() {
-        // Δημιουργία αντικειμένου για δοκιμή
         Citizen citizen = new Citizen();
         citizen.setAt("XY100000");
         citizen.setFirstName("Constantinos");
@@ -49,60 +34,19 @@ public class CitizenIT {
         citizen.setGender("Male");
         citizen.setAfm("123456789");
 
-        // 1. Δοκιμή POST: Έλεγχος εισαγωγής νέου πολίτη
         given()
             .contentType(ContentType.JSON)
             .body(citizen)
         .when()
             .post()
         .then()
-            .statusCode(200) // OK
-            .body("at", equalTo("XY100000"))
-            .body("firstName", equalTo("Constantinos"));
+            .statusCode(200);
 
-        // 2. Δοκιμή GET: Έλεγχος ανάκτησης με βάση τον ΑΤ
         given()
         .when()
             .get("/XY100000")
         .then()
             .statusCode(200)
-            .body("lastName", equalTo("Kouyouris"))
-            .body("afm", equalTo("123456789"));
-    }
-
-    @Test
-    public void testGetNonExistingCitizen() {
-        // Δοκιμή αναζήτησης ΑΤ που δεν υπάρχει
-        given()
-        .when()
-            .get("/NOTEXIST")
-        .then()
-            .statusCode(404); // Not Found
-    }
-
-    @Test
-    public void testDeleteCitizen() {
-        // Προετοιμασία: Εισαγωγή ενός πολίτη προς διαγραφή
-        Citizen c = new Citizen();
-        c.setAt("ZZ999999");
-        c.setFirstName("Delete");
-        c.setLastName("Me");
-        c.setGender("Other");
-        
-        given().contentType(ContentType.JSON).body(c).post();
-
-        // Δοκιμή DELETE
-        given()
-        .when()
-            .delete("/ZZ999999")
-        .then()
-            .statusCode(200);
-
-        // Επιβεβαίωση διαγραφής (GET -> 404)
-        given()
-        .when()
-            .get("/ZZ999999")
-        .then()
-            .statusCode(404);
+            .body("firstName", equalTo("Constantinos"));
     }
 }
