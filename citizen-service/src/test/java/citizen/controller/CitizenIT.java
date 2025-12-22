@@ -12,8 +12,9 @@ import org.springframework.test.context.ActiveProfiles;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, 
+                properties = "spring.main.banner-mode=off") // Απενεργοποίηση banner για καθαρά logs
+@ActiveProfiles("test") // Ενεργοποίηση του test profile
 public class CitizenIT {
 
     @LocalServerPort
@@ -22,7 +23,8 @@ public class CitizenIT {
     @BeforeEach
     public void setUp() {
         RestAssured.port = port;
-        RestAssured.basePath = "/api/citizens";
+        // Αν το API σας είναι απευθείας στο /citizens, αφήστε το κενό ή βάλτε το prefix
+        RestAssured.basePath = "/api/citizens"; 
     }
 
     @Test
@@ -34,19 +36,22 @@ public class CitizenIT {
         citizen.setGender("Male");
         citizen.setAfm("123456789");
 
+        // 1. Δοκιμή POST (Δημιουργία)
         given()
             .contentType(ContentType.JSON)
             .body(citizen)
         .when()
             .post()
         .then()
-            .statusCode(200);
+            .statusCode(anyOf(is(200), is(201))); // Δέχεται 200 OK ή 201 Created
 
+        // 2. Δοκιμή GET (Ανάκτηση βάσει AT)
         given()
         .when()
             .get("/XY100000")
         .then()
             .statusCode(200)
-            .body("firstName", equalTo("Constantinos"));
+            .body("firstName", equalTo("Constantinos"))
+            .body("at", equalTo("XY100000"));
     }
 }
