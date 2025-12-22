@@ -20,42 +20,48 @@ public class CitizenClient implements CommandLineRunner {
     private Scanner scanner;
 
     @Autowired
-    private Environment env; // Προσθήκη για έλεγχο των Profiles 2025
+    private Environment env;
 
     public CitizenClient() {
+        // Υποστήριξη PATCH requests μέσω Apache HttpClient 5
         this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
     }
 
     @Override
     public void run(String... args) {
-        // 1. Έλεγχος αν το ενεργό profile είναι "test" (Πιο αξιόπιστο για το CitizenIT)
-        if (Arrays.asList(env.getActiveProfiles()).contains("test")) {
+        // 1. ΡΙΖΙΚΗ ΛΥΣΗ: Έλεγχος αν η εκτέλεση ξεκίνησε από το CitizenIT ή JUnit
+        // Αυτό σταματάει το μενού ακόμα και αν το Spring Profile αποτύχει
+        boolean isTest = Arrays.stream(Thread.currentThread().getStackTrace())
+                .anyMatch(element -> element.getClassName().contains("CitizenIT") || 
+                                     element.getClassName().contains("junit") ||
+                                     element.getClassName().contains("Surefire"));
+
+        if (isTest) {
+            return; 
+        }
+
+        // 2. ΑΣΦΑΛΕΙΑ: Έλεγχος για GitHub Actions ή περιβάλλον χωρίς τερματικό
+        if (System.getenv("GITHUB_ACTIONS") != null || System.console() == null) {
+            return; 
+        }
+
+        // 3. ΕΛΕΓΧΟΣ PROFILE: Αν το profile είναι "test", σταμάτα
+        if (env != null && Arrays.asList(env.getActiveProfiles()).contains("test")) {
             return;
         }
 
-        // 2. Έλεγχος αν υπάρχει πραγματικό τερματικό ή αν τρέχει στο GitHub Actions
-        if (System.console() == null || System.getenv("GITHUB_ACTIONS") != null) {
-            return; 
-        }
-
-        // 3. Έλεγχος Runtime αν η εντολή εκτέλεσης περιέχει JUnit ή το Integration Test
-        String command = System.getProperty("sun.java.command", "").toLowerCase();
-        if (command.contains("junit") || command.contains("citizenit") || command.contains("surefire")) {
-            return; 
-        }
-
-        // Αρχικοποίηση Scanner μόνο αν περάσουμε όλους τους ελέγχους ασφαλείας
+        // Αν περάσει όλους τους ελέγχους, τότε μόνο αρχικοποιείται ο Scanner
         this.scanner = new Scanner(System.in);
         startApp();
     }
 
     private void startApp() {
         boolean running = true;
-        System.out.println("Ο Client ξεκίνησε επιτυχώς.");
+        System.out.println("Ο Client ξεκίνησε επιτυχώς (2025).");
         
         while (running) {
             try {
-                System.out.println("\n--- ΜΕΝΟΥ ΔΙΑΧΕΙΡΙΣΗΣ ΠΟΛΙΤΩΝ (2025) ---");
+                System.out.println("\n--- ΜΕΝΟΥ ΔΙΑΧΕΙΡΙΣΗΣ ΠΟΛΙΤΩΝ ---");
                 System.out.println("1. Λίστα | 2. Εύρεση | 3. Εισαγωγή | 4. Ενημέρωση | 5. Διαγραφή");
                 System.out.println("Οποιαδήποτε άλλη τιμή για ΕΞΟΔΟΣ");
                 System.out.print("Επιλογή: ");
@@ -77,7 +83,6 @@ public class CitizenClient implements CommandLineRunner {
                 }
             } catch (Exception e) {
                 System.err.println("Σφάλμα: " + e.getMessage());
-                System.out.println("Επιστροφή στο μενού...");
             }
         }
         System.out.println("Αντίο!");
@@ -92,7 +97,7 @@ public class CitizenClient implements CommandLineRunner {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Σφάλμα κατά την ανάκτηση λίστας.");
+            System.out.println("Σφάλμα κατά την ανάκτηση.");
         }
     }
 
@@ -116,14 +121,14 @@ public class CitizenClient implements CommandLineRunner {
             System.out.print("Όνομα: "); c.setFirstName(scanner.nextLine());
             System.out.print("Επίθετο: "); c.setLastName(scanner.nextLine());
             System.out.print("Φύλο: "); c.setGender(scanner.nextLine());
-            System.out.print("Ημ/νία Γέννησης (DD-MM-YYYY): "); c.setBirthDate(scanner.nextLine());
+            System.out.print("Ημ/νία Γέννησης: "); c.setBirthDate(scanner.nextLine());
             System.out.print("ΑΦΜ: "); c.setAfm(scanner.nextLine());
             System.out.print("Διεύθυνση: "); c.setAddress(scanner.nextLine());
 
             restTemplate.postForObject(BASE_URL, c, Citizen.class);
             System.out.println("Επιτυχής εισαγωγή.");
         } catch (Exception e) {
-            System.out.println("Σφάλμα κατά την εισαγωγή: " + e.getMessage());
+            System.out.println("Σφάλμα εισαγωγής.");
         }
     }
 
@@ -138,7 +143,7 @@ public class CitizenClient implements CommandLineRunner {
             restTemplate.patchForObject(BASE_URL + "/" + at, update, String.class);
             System.out.println("Η ενημέρωση ολοκληρώθηκε.");
         } catch (Exception e) {
-            System.out.println("Σφάλμα κατά την ενημέρωση.");
+            System.out.println("Σφάλμα ενημέρωσης.");
         }
     }
 
@@ -149,8 +154,7 @@ public class CitizenClient implements CommandLineRunner {
             restTemplate.delete(BASE_URL + "/" + at);
             System.out.println("Ο πολίτης διαγράφηκε.");
         } catch (Exception e) {
-            System.out.println("Σφάλμα κατά τη διαγραφή.");
+            System.out.println("Σφάλμα διαγραφής.");
         }
     }
 }
-
