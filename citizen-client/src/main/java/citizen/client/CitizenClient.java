@@ -24,20 +24,15 @@ public class CitizenClient implements CommandLineRunner {
     }
 
     @Override
-public void run(String... args) {
-    // 1. Έλεγχος αν τρέχουμε στο GitHub Actions
-    if (System.getenv("GITHUB_ACTIONS") != null) {
+    public void run(String... args) {
+    // ΑΥΤΟ ΘΑ ΣΤΑΜΑΤΗΣΕΙ ΤΟ ΠΑΓΩΜΑ ΟΡΙΣΤΙΚΑ
+    if (System.getenv("GITHUB_ACTIONS") != null || System.console() == null) {
+        System.out.println("Non-interactive environment detected. Skipping menu...");
         return; 
     }
-    
-    // 2. Έλεγχος αν η εφαρμογή ξεκίνησε από JUnit/Maven Tests
-    String command = System.getProperty("sun.java.command", "").toLowerCase();
-    if (command.contains("junit") || command.contains("surefire") || command.contains("failsafe")) {
-        return; 
-    }
-
     startInteractiveMenu();
     }
+
 
 
     private void startInteractiveMenu() {
