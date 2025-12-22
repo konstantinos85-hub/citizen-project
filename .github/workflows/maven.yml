@@ -9,17 +9,23 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Ασφάλεια: Αν κάτι πάει στραβά, τερμάτισε το job μετά από 10 λεπτά 
+    # αντί να καταναλώνει credits για ώρες.
+    timeout-minutes: 10
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: [actions/checkout](github.com)@v4
     
     - name: Set up JDK 21
-      uses: actions/setup-java@v4
+      uses: [actions/setup-java](github.com)@v4
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
 
     - name: Build and Test with Maven
-      # Προσθέτουμε την παράμετρο που απενεργοποιεί τους CommandLineRunners
-      run: mvn -B clean verify -Dspring.main.command-line-runner.enabled=false
+      # 1. -B: Run in non-interactive mode (Batch)
+      # 2. -DskipTests=false: Βεβαιωνόμαστε ότι τρέχουν τα tests
+      # 3. -Dspring.profiles.active=test: Ενεργοποιεί το profile 'test' ώστε η 
+      #    CitizenClient (που έχει @Profile("!test")) να μην ξεκινήσει ΚΑΝ.
+      run: mvn -B clean verify -Dspring.profiles.active=test
