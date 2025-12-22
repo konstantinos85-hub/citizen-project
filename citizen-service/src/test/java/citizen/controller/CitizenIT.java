@@ -13,8 +13,8 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, 
-                properties = "spring.main.banner-mode=off") // Απενεργοποίηση banner για καθαρά logs
-@ActiveProfiles("test") // Ενεργοποίηση του test profile
+                classes = {CitizenApplication.class, CitizenController.class}) 
+@ActiveProfiles("test")
 public class CitizenIT {
 
     @LocalServerPort
