@@ -1,5 +1,20 @@
+# Maven
 target/
-.DS_Store
+**/target/
+*.jar
+*.war
+
+# IDE (Eclipse/IntelliJ)
 .settings/
 .project
 .classpath
+.idea/
+*.iml
+.metadata/
+
+# macOS
+.DS_Store
+._*
+
+# Logs
+*.log
