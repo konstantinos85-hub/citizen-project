@@ -1,16 +1,17 @@
 package citizen.controller;
 
-import citizen.model.Citizen;
-import io.restassured.RestAssured;
-import io.restassured.http.ContentType;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import citizen.model.Citizen;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -21,37 +22,40 @@ public class CitizenIT {
 
     @BeforeEach
     public void setUp() {
-    RestAssured.port = port;
-    // Αν ο Controller έχει @RequestMapping("/api/citizens"), το basePath πρέπει να είναι:
-    RestAssured.basePath = "/api/citizens"; 
+        RestAssured.port = port;
+        RestAssured.basePath = "/api/citizens";
     }
-
 
     @Test
     public void testCreateAndGetCitizen() {
+        // 1. Δημιουργία αντικειμένου για το POST
         Citizen citizen = new Citizen();
-        citizen.setAt("XY100000");
-        citizen.setFirstName("Constantinos");
+        citizen.setAt("AZ123456");
+        citizen.setFirstName("Konstantinos");
         citizen.setLastName("Kouyouris");
         citizen.setGender("Male");
         citizen.setAfm("123456789");
+        citizen.setBirthDate("01-01-1990");
+        citizen.setAddress("Athens 123");
 
-        // 1. Δοκιμή POST (Δημιουργία)
+        // 2. POST request: Δημιουργία Πολίτη
         given()
             .contentType(ContentType.JSON)
             .body(citizen)
         .when()
             .post()
         .then()
-            .statusCode(anyOf(is(200), is(201))); // Δέχεται 200 OK ή 201 Created
+            .statusCode(200)
+            .body("at", equalTo("AZ123456"))
+            .body("firstName", equalTo("Konstantinos"));
 
-        // 2. Δοκιμή GET (Ανάκτηση βάσει AT)
+        // 3. GET request: Επαλήθευση ότι ο πολίτης υπάρχει
         given()
+            .pathParam("at", "AZ123456")
         .when()
-            .get("/XY100000")
+            .get("/{at}")
         .then()
             .statusCode(200)
-            .body("firstName", equalTo("Constantinos"))
-            .body("at", equalTo("XY100000"));
+            .body("lastName", equalTo("Kouyouris"));
     }
 }
