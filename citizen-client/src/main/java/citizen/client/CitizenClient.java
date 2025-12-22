@@ -25,17 +25,20 @@ public class CitizenClient implements CommandLineRunner {
 
     @Override
 public void run(String... args) {
-    
-    String command = System.getProperty("sun.java.command", "").toLowerCase();
-    if (System.getenv("GITHUB_ACTIONS") != null || 
-        command.contains("junit") || 
-        command.contains("surefire") || 
-        command.contains("failsafe")) {
+    // 1. Έλεγχος αν τρέχουμε στο GitHub Actions
+    if (System.getenv("GITHUB_ACTIONS") != null) {
         return; 
     }
     
+    // 2. Έλεγχος αν η εφαρμογή ξεκίνησε από JUnit/Maven Tests
+    String command = System.getProperty("sun.java.command", "").toLowerCase();
+    if (command.contains("junit") || command.contains("surefire") || command.contains("failsafe")) {
+        return; 
+    }
+
     startInteractiveMenu();
-}
+    }
+
 
     private void startInteractiveMenu() {
         Scanner scanner = new Scanner(System.in);
