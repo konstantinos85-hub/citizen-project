@@ -21,10 +21,11 @@ public class CitizenIT {
 
     @BeforeEach
     public void setUp() {
-        RestAssured.port = port;
-        // Αν το API σας είναι απευθείας στο /citizens, αφήστε το κενό ή βάλτε το prefix
-        RestAssured.basePath = "/api/citizens"; 
+    RestAssured.port = port;
+    // Αν ο Controller έχει @RequestMapping("/api/citizens"), το basePath πρέπει να είναι:
+    RestAssured.basePath = "/api/citizens"; 
     }
+
 
     @Test
     public void testCreateAndGetCitizen() {
