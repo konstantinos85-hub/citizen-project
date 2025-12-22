@@ -1,0 +1,73 @@
+name: Citizen Project CI/CD
+
+on:
+  push:
+    branches:
+      - develop  # Εκτέλεση μόνο για commits στο κλαδί develop
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    name: Compilation and Testing
+
+    steps:
+      # Βήμα 1: Check-out του κώδικα
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Βήμα 2: Εγκατάσταση περιβάλλοντος Java/Maven
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      # Βήμα 3: Μεταγλώττιση (Compilation)
+      - name: Compile Source Code
+        run: mvn clean compile
+
+      # Βήμα 4: Δοκιμή (Unit & API/Integration Testing)
+      # Χρησιμοποιούμε τη φάση verify για να εκτελεστούν και τα Integration Tests
+      # Το flag -Dcitizen.client.enabled=false αποτρέπει το πάγωμα του interactive μενού
+      - name: Run Unit and API Tests
+        run: mvn verify -Dcitizen.client.enabled=false
+
+      # Βήμα 5: Μεταφόρτωση Αναφορών (Artifacts) για οπτικοποίηση
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v4
+        if: always() # Εκτελείται ακόμα και αν αποτύχουν τα tests
+        with:
+          name: test-reports-artifact
+          path: |
+            **/target/surefire-reports/
+            **/target/failsafe-reports/
+
+  release:
+    name: Early Release Upload
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    permissions:
+      contents: write # Απαραίτητο για τη δημιουργία release το 2025
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build JAR Executables
+        run: mvn package -DskipTests
+
+      # Προαιρετική εργασία: Μεταφόρτωση εκτελέσιμου στα Releases
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.1.${{ github.run_number }}-alpha
+          name: Early Release v0.1.${{ github.run_number }}
+          draft: false
+          prerelease: true
+          files: |
+            **/target/*.jar
+            **/target/*.war
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
