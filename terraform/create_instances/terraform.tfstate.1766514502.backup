@@ -1,0 +1,255 @@
+{
+  "version": 4,
+  "terraform_version": "1.14.1",
+  "serial": 98,
+  "lineage": "4be95d31-bc3e-e417-b21c-4c020012c4ad",
+  "outputs": {
+    "alb_dns_link": {
+      "value": "http://citizen-load-balancer-163734692.us-west-2.elb.amazonaws.com",
+      "type": "string"
+    },
+    "app_instance_ids": {
+      "value": [
+        "i-042739a245c231433",
+        "i-0659e6dcc73477a7c",
+        "i-0e1c0bd1988ea705a"
+      ],
+      "type": [
+        "tuple",
+        [
+          "string",
+          "string",
+          "string"
+        ]
+      ]
+    },
+    "app_instances_private_ips": {
+      "value": [
+        "172.31.2.49",
+        "172.31.11.169",
+        "172.31.13.144"
+      ],
+      "type": [
+        "tuple",
+        [
+          "string",
+          "string",
+          "string"
+        ]
+      ]
+    },
+    "db_instance_id": {
+      "value": "i-039cdbb70849a5dcc",
+      "type": "string"
+    },
+    "load_balancer_dns": {
+      "value": "http://citizen-load-balancer-163734692.us-west-2.elb.amazonaws.com",
+      "type": "string"
+    },
+    "target_group_arn": {
+      "value": "arn:aws:elasticloadbalancing:us-west-2:100908260293:targetgroup/citizen-target-group/4ba57bb6388f34d3",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "mode": "data",
+      "type": "terraform_remote_state",
+      "name": "images",
+      "provider": "provider[\"terraform.io/builtin/terraform\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "backend": "local",
+            "config": {
+              "value": {
+                "path": "../create_images/terraform.tfstate"
+              },
+              "type": [
+                "object",
+                {
+                  "path": "string"
+                }
+              ]
+            },
+            "defaults": null,
+            "outputs": {
+              "value": {
+                "app_ami_id": "ami-00496a9548cfbeff6",
+                "db_ami_id": "ami-0525f19ba7a1c438d"
+              },
+              "type": [
+                "object",
+                {
+                  "app_ami_id": "string",
+                  "db_ami_id": "string"
+                }
+              ]
+            },
+            "workspace": null
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_lb_target_group",
+      "name": "app_tg",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 0,
+          "attributes": {
+            "arn": "arn:aws:elasticloadbalancing:us-west-2:100908260293:targetgroup/citizen-target-group/4ba57bb6388f34d3",
+            "arn_suffix": "targetgroup/citizen-target-group/4ba57bb6388f34d3",
+            "connection_termination": null,
+            "deregistration_delay": "300",
+            "health_check": [
+              {
+                "enabled": true,
+                "healthy_threshold": 3,
+                "interval": 30,
+                "matcher": "200-399",
+                "path": "/api/citizen",
+                "port": "traffic-port",
+                "protocol": "HTTP",
+                "timeout": 10,
+                "unhealthy_threshold": 5
+              }
+            ],
+            "id": "arn:aws:elasticloadbalancing:us-west-2:100908260293:targetgroup/citizen-target-group/4ba57bb6388f34d3",
+            "ip_address_type": "ipv4",
+            "lambda_multi_value_headers_enabled": false,
+            "load_balancer_arns": [],
+            "load_balancing_algorithm_type": "round_robin",
+            "load_balancing_anomaly_mitigation": "off",
+            "load_balancing_cross_zone_enabled": "use_load_balancer_configuration",
+            "name": "citizen-target-group",
+            "name_prefix": "",
+            "port": 8089,
+            "preserve_client_ip": null,
+            "protocol": "HTTP",
+            "protocol_version": "HTTP1",
+            "proxy_protocol_v2": false,
+            "region": "us-west-2",
+            "slow_start": 0,
+            "stickiness": [
+              {
+                "cookie_duration": 86400,
+                "cookie_name": "",
+                "enabled": false,
+                "type": "lb_cookie"
+              }
+            ],
+            "tags": {},
+            "tags_all": {},
+            "target_control_port": 0,
+            "target_failover": [
+              {
+                "on_deregistration": null,
+                "on_unhealthy": null
+              }
+            ],
+            "target_group_health": [
+              {
+                "dns_failover": [
+                  {
+                    "minimum_healthy_targets_count": "1",
+                    "minimum_healthy_targets_percentage": "off"
+                  }
+                ],
+                "unhealthy_state_routing": [
+                  {
+                    "minimum_healthy_targets_count": 1,
+                    "minimum_healthy_targets_percentage": "off"
+                  }
+                ]
+              }
+            ],
+            "target_health_state": [
+              {
+                "enable_unhealthy_connection_termination": null,
+                "unhealthy_draining_interval": null
+              }
+            ],
+            "target_type": "instance",
+            "vpc_id": "vpc-0353de65de75ebb17"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "arn": "arn:aws:elasticloadbalancing:us-west-2:100908260293:targetgroup/citizen-target-group/4ba57bb6388f34d3"
+          },
+          "private": "bnVsbA=="
+        }
+      ]
+    },
+    {
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "lb_sg",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:ec2:us-west-2:100908260293:security-group/sg-020d4fdb00f76a310",
+            "description": "Allow HTTP inbound traffic",
+            "egress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "",
+                "from_port": 0,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "-1",
+                "security_groups": [],
+                "self": false,
+                "to_port": 0
+              }
+            ],
+            "id": "sg-020d4fdb00f76a310",
+            "ingress": [
+              {
+                "cidr_blocks": [
+                  "0.0.0.0/0"
+                ],
+                "description": "",
+                "from_port": 80,
+                "ipv6_cidr_blocks": [],
+                "prefix_list_ids": [],
+                "protocol": "tcp",
+                "security_groups": [],
+                "self": false,
+                "to_port": 80
+              }
+            ],
+            "name": "citizen-lb-sg",
+            "name_prefix": "",
+            "owner_id": "100908260293",
+            "region": "us-west-2",
+            "revoke_rules_on_delete": false,
+            "tags": {},
+            "tags_all": {},
+            "timeouts": null,
+            "vpc_id": "vpc-0353de65de75ebb17"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "account_id": "100908260293",
+            "id": "sg-020d4fdb00f76a310",
+            "region": "us-west-2"
+          },
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjo2MDAwMDAwMDAwMDAsImRlbGV0ZSI6OTAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    }
+  ],
+  "check_results": null
+}

@@ -2,7 +2,7 @@ provider "aws" {
   region = var.region
 }
 
-# --- 1. DATA SOURCES (Αυτόματος εντοπισμός VPC/Subnets) ---
+# --- 1. DATA SOURCES ---
 data "aws_vpc" "default" {
   default = true
 }
@@ -14,11 +14,10 @@ data "aws_subnets" "default" {
   }
 }
 
-# --- 2. SECURITY GROUPS (Κανόνες Πρόσβασης) ---
+# --- 2. SECURITY GROUPS ---
 
-# SG για τον Load Balancer
 resource "aws_security_group" "lb_sg" {
-  name   = "citizen-alb-sg"
+  name   = "citizen-alb-sg-2025"
   vpc_id = data.aws_vpc.default.id
 
   ingress {
@@ -36,9 +35,8 @@ resource "aws_security_group" "lb_sg" {
   }
 }
 
-# SG για την Spring Boot Εφαρμογή (Πόρτα 8089)
 resource "aws_security_group" "app_sg" {
-  name   = "citizen-app-sg"
+  name   = "citizen-app-sg-2025"
   vpc_id = data.aws_vpc.default.id
 
   ingress {
@@ -48,7 +46,6 @@ resource "aws_security_group" "app_sg" {
     security_groups = [aws_security_group.lb_sg.id]
   }
 
-  # SSH κανόνας για να μην βγάζει timeout το remote-exec
   ingress {
     from_port   = 22
     to_port     = 22
@@ -64,9 +61,8 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# SG για τη MySQL
 resource "aws_security_group" "db_sg" {
-  name   = "citizen-db-sg"
+  name   = "citizen-db-sg-2025"
   vpc_id = data.aws_vpc.default.id
 
   ingress {
@@ -91,10 +87,10 @@ resource "aws_security_group" "db_sg" {
   }
 }
 
-# --- 3. ΦΑΣΗ ΠΡΟΕΤΟΙΜΑΣΙΑΣ: ΔΗΜΙΟΥΡΓΙΑ ΕΙΚΟΝΩΝ (AMIs) ---
+# --- 3. ΦΑΣΗ ΠΡΟΕΤΟΙΜΑΣΙΑΣ: AMIs ---
 
 resource "aws_instance" "db_temp" {
-  ami                         = "ami-00f46ccd1cbfb363e" # Ubuntu 24.04 us-west-2
+  ami                         = "ami-00f46ccd1cbfb363e" 
   instance_type               = var.instance_type_db
   key_name                    = var.key_name
   vpc_security_group_ids      = [aws_security_group.db_sg.id]
@@ -121,7 +117,7 @@ resource "null_resource" "wait_db" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file("/Users/konstantinoskouyouris/Desktop/Multi-cloud-DevOps-Engineer/Υπολογιστικό Νέφος και Διαχείριση Πόρων Κατά Μήκος Νεφών/citizen-project-main/terraform/cloud.test.pem")
+      private_key = file("${path.module}/cloud.test.pem")
       host        = aws_instance.db_temp.public_ip
     }
   }
@@ -147,7 +143,10 @@ resource "aws_instance" "app_temp" {
                 cd /home/ubuntu
                 git clone -b ${var.git_repo_branch} ${var.spring_boot_app_git-repo} citizen-app
                 cd citizen-app
-                mvn clean package -DskipTests
+                
+                # ΚΡΙΣΙΜΗ ΔΙΟΡΘΩΣΗ: Build από τη ρίζα για να αναγνωριστεί το citizen-domain
+                mvn clean install -DskipTests
+                
                 touch /home/ubuntu/app_ready
                 EOF
 }
@@ -159,7 +158,7 @@ resource "null_resource" "wait_app" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file("/Users/konstantinoskouyouris/Desktop/Multi-cloud-DevOps-Engineer/Υπολογιστικό Νέφος και Διαχείριση Πόρων Κατά Μήκος Νεφών/citizen-project-main/terraform/cloud.test.pem")
+      private_key = file("${path.module}/cloud.test.pem")
       host        = aws_instance.app_temp.public_ip
     }
   }
@@ -192,7 +191,15 @@ resource "aws_instance" "app_prod" {
                 export DB_NAME=${var.db_name}
                 export DB_USER=${var.db_user}
                 export DB_PASSWORD=${var.db_password}
-                java -jar /home/ubuntu/citizen-app/target/*.jar &
+                
+                # Εκκίνηση από τον σωστό υποφάκελο citizen-service
+                nohup java -jar /home/ubuntu/citizen-app/citizen-service/target/${var.jar_name}.jar \
+                  --server.port=8089 \
+                  --spring.datasource.url=jdbc:mysql://${aws_instance.db_prod.private_ip}:3306/${var.db_name} \
+                  --spring.datasource.username=${var.db_user} \
+                  --spring.datasource.password=${var.db_password} \
+                  --spring.jpa.hibernate.ddl-auto=update \
+                  > /home/ubuntu/app.log 2>&1 &
                 EOF
 
   tags = { Name = "Citizen-App-${count.index + 1}" }
@@ -209,9 +216,18 @@ resource "aws_lb" "citizen_lb" {
 
 resource "aws_lb_target_group" "citizen_tg" {
   name     = "citizen-tg"
-  port     = 8089 # Εδώ η πόρτα σας
+  port     = 8089
   protocol = "HTTP"
   vpc_id   = data.aws_vpc.default.id
+
+  health_check {
+    path                = "/api/citizens/test"
+    port                = "8089"
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    timeout             = 5
+    interval            = 30
+  }
 }
 
 resource "aws_lb_listener" "http" {
@@ -228,5 +244,5 @@ resource "aws_lb_target_group_attachment" "app_attach" {
   count            = 3
   target_group_arn = aws_lb_target_group.citizen_tg.arn
   target_id        = aws_instance.app_prod[count.index].id
-  port             = 8089 # Εδώ η πόρτα σας
+  port             = 8089
 }

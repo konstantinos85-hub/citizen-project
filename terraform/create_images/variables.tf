@@ -60,4 +60,10 @@ variable "key_name" {
 	default     = "cloud.test"
 	
 }
+
+variable "jar_name" {
+  description = "The name of the generated JAR file (without the .jar extension)"
+  type        = string
+  default     = "citizen-service-0.0.1-SNAPSHOT" 
+}
 	
