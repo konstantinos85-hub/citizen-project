@@ -116,40 +116,42 @@ resource "aws_instance" "app" {
 
   user_data = <<-EOF
               #!/bin/bash
-              # Καταγραφή logs για έλεγχο σφαλμάτων
+              # 1. Καταγραφή logs για έλεγχο σφαλμάτων
               exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
               
+              # 2. Εγκατάσταση απαραίτητων πακέτων
               apt-get update
               apt-get install -y openjdk-17-jdk maven git netcat-openbsd
 
-              # Αναμονή μέχρι η βάση να απαντήσει στη θύρα 3306
+              # 3. Αναμονή μέχρι η βάση να απαντήσει στη θύρα 3306
               echo "Waiting for DB at ${aws_instance.db.private_ip}..."
               while ! nc -z ${aws_instance.db.private_ip} 3306; do
+                echo "DB is not ready yet... sleeping 10s"
                 sleep 10
               done
+              echo "Database is UP!"
 
+              # 4. Λήψη και Build του κώδικα
               cd /home/ubuntu
               git clone https://github.com/konstantinos85-hub/citizen-project.git
               cd citizen-project/citizen-service
               
-              # Build της υπηρεσίας
               mvn clean package -DskipTests
 
-              # Ορισμός μεταβλητών περιβάλλοντος για τη Spring Boot
-              export DB_HOST=${aws_instance.db.private_ip}
-              export DB_NAME=${var.db_name}
-              export DB_USER=${var.db_user}
-              export DB_PASSWORD=${var.db_password}
-
-              # Εκτέλεση της εφαρμογής με ρητό ορισμό των παραμέτρων σύνδεσης
-              nohup java -Dspring.datasource.url=jdbc:mysql://${aws_instance.db.private_ip}:3306/${var.db_name} \
-  			  -Dspring.datasource.username=${var.db_user} \
-  			  -Dspring.datasource.password=${var.db_password} \
-  			  -Dspring.jpa.database-platform=org.hibernate.dialect.MySQLDialect \
-  			  -jar target/${var.jar_name}.jar \
-  			  --server.port=8089 \
-  			  --spring.profiles.active=prod > /var/log/spring-boot-app.log 2>&1 &
+              # 5. Εκτέλεση της εφαρμογής
+              # Χρησιμοποιούμε System Properties (-D) που υπερισχύουν του application.properties
+              nohup java -Dspring.datasource.url=jdbc:mysql://${aws_instance.db.private_ip}:3306/${var.db_name}?createDatabaseIfNotExist=true \
+                -Dspring.datasource.username=${var.db_user} \
+                -Dspring.datasource.password=${var.db_password} \
+                -Dspring.jpa.hibernate.ddl-auto=update \
+                -Dspring.jpa.database-platform=org.hibernate.dialect.MySQLDialect \
+                -jar target/${var.jar_name}.jar \
+                --server.port=8089 \
+                --spring.profiles.active=prod > /var/log/spring-boot-app.log 2>&1 &
+              
+              echo "Application started in background."
               EOF
+
 
   tags = { Name = "Citizen-App-Instance-${count.index + 1}" }
 }
